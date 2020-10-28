@@ -1,12 +1,10 @@
 import json
 import queue as python_queue
 import copy
-from enum import Enum, IntEnum
+from enum import IntEnum
 from pprint import pprint
 import collections.abc
 from typing import Union
-
-import numpy
 
 DEBUG = True
 
@@ -149,7 +147,7 @@ def move_valid(q, move):
     if alive_players == 2:
         # only other or wait is allowed for non 3-player games
         for m in move:
-            if m != 0 or m != 2:
+            if not (m == 0 or m == 2):
                 return False
 
         # look for Other, and kill other player if present, break on wait
@@ -163,12 +161,12 @@ def move_valid(q, move):
             # player i chose to kill other
             if m == 2:
                 # find index of other player, this works because only two are present and we start searching after p_i
-                for j in range(1, 3):
-                    while init_state.state[i + j % length] != 1:
-                        pass
+                for j in range(1, 3):  # TODO
+                    if init_state.state[(i + j) % length] != 1:
+                        continue
                     # kill other player
                     state.state[j] = 0
-
+                    break  # good measure
 
     if alive_players == 1 or alive_players == 0:
         # if only one player, they can only wait
