@@ -119,12 +119,17 @@ def move_valid(q, move):
     if DEBUG:
         print("Move valid:")
 
+    # count alive players
     alive_players = init_state.state.count(1)
 
     if alive_players == 3:
         for i, m in enumerate(move):
             if DEBUG:
                 print(f"i: {i}, m: {m}")
+
+            # other in 3-player game is illegal
+            if m == 2:
+                return False
 
             # if dead, must wait:
             if init_state.state[i] == 0:
@@ -147,7 +152,25 @@ def move_valid(q, move):
             if m != 0 or m != 2:
                 return False
 
-    if alive_players == 1:
+        # look for Other, and kill other player if present, break on wait
+        for i, m in enumerate(move):
+
+            # if dead, must wait:
+            if init_state.state[i] == 0:
+                if m != MexicanMoves.WAIT:
+                    return False
+
+            # player i chose to kill other
+            if m == 2:
+                # find index of other player, this works because only two are present and we start searching after p_i
+                for j in range(1, 3):
+                    while init_state.state[i + j % length] != 1:
+                        pass
+                    # kill other player
+                    state.state[j] = 0
+
+
+    if alive_players == 1 or alive_players == 0:
         # if only one player, they can only wait
         for m in move:
             if m != 0:
@@ -207,7 +230,7 @@ if __name__ == '__main__':
     # transitions[state][player1choice][player2choice][player3choice] -> new_state
     cgs = CGS(player_count=3)
 
-    gen = generate_mexican(cgs)
+    generate_mexican(cgs)
     pprint(cgs.game_struct)
 
     write_cgs("test.json", cgs.game_struct)
