@@ -1,7 +1,12 @@
 import json
-from enum import Enum
+import queue as python_queue
+import copy
+from enum import Enum, IntEnum
 from pprint import pprint
 import collections.abc
+from typing import Union
+
+import numpy
 
 DEBUG = True
 
@@ -24,12 +29,21 @@ class CGS:
                             "transitions": transitions,
                             "moves": moves}
 
+    def add_trans(self, q, move, result_state):
+        entry = {move[0]: {move[1]: {move[2]: {result_state}}}}  # resulting state as list?
+        try:
+            self.game_struct['transitions'][q]
+        except KeyError:  # maybe q doesn't exist
+            self.game_struct['transitions'].update({q: {}})
+        finally:
+            self.game_struct['transitions'][q] = update(self.game_struct['transitions'][q], entry)
 
-class MexicanMoves(Enum):
+
+class MexicanMoves(IntEnum):
     WAIT = 0
     LEFT = -1
     RIGHT = 1
-    OTHER = 1  # think bout this
+    OTHER = 2  # think bout this
 
 
 def kill_method(source, value, length):
@@ -48,47 +62,152 @@ def update(d, u):
     return d
 
 
-def generate_mexican(cgs: CGS):
-    # transitions[state][player1choice][player2choice][player3choice] -> new_state
-    i = 0
+class State:
+    def __init__(self, state_int):
+        # Unroll base 10 rep to binary rep with leading zeroes
+        bin_rep = list(map(int, get_binary_rep(state_int)))
+        if len(bin_rep) == 1:
+            bin_rep = [0] + bin_rep
+
+        if len(bin_rep) == 2:
+            bin_rep = [0] + bin_rep
+
+        self.state = bin_rep
+
+    def __eq__(self, other):
+        return self.state == other.state
+
+    def __str__(self):
+        return str(self.state)
+
+    def base10_rep(self):
+        return get_base10_rep(self.__str__())
+
+
+def all_moves():
+    ret = set()
+    [[[ret.add((p1_move, p2_move, p3_move))
+       for p1_move in MexicanMoves]
+      for p2_move in MexicanMoves]
+     for p3_move in MexicanMoves]
+    return sorted(ret)
+
+
+def all_states():
+    return [state for state in range(0, 8)]
+
+
+def get_binary_rep(val: int) -> str:
+    return format(val, 'b')
+
+
+def get_base10_rep(val: Union[int, str]) -> int:
+    return int(str(val), 2)
+
+
+def get_base10_rep_from_binary_array(val: [int]):
+    return get_base10_rep(str(''.join(map(str, val))))
+
+
+def move_valid(q, move):
+    init_state = State(q)
+    state = copy.deepcopy(init_state)
     length = 3
-    out = []
-    for state in range(0, 8):
-        cgs.game_struct['transitions'].update({state: {}})
+    assert init_state == state
 
-    for p1_move in MexicanMoves:
-        for p2_move in MexicanMoves:
-            for p3_move in MexicanMoves:
-                i += 1
-                state = [1, 1, 1]
+    # three player
+    if DEBUG:
+        print("Move valid:")
 
-                # for each player, kill if not wait
-                if p1_move != MexicanMoves.WAIT:
-                    state[(kill_method(0, p1_move.value, length))] = 0
-                if p2_move != MexicanMoves.WAIT:
-                    state[(kill_method(1, p2_move.value, length))] = 0
-                if p3_move != MexicanMoves.WAIT:
-                    state[(kill_method(2, p3_move.value, length))] = 0
+    alive_players = init_state.state.count(1)
 
+    if alive_players == 3:
+        for i, m in enumerate(move):
+            if DEBUG:
+                print(f"i: {i}, m: {m}")
+
+            # if dead, must wait:
+            if init_state.state[i] == 0:
+                if m != MexicanMoves.WAIT:
+                    return False
+
+            # else player is alive
+            else:
+                # if player wants to kill, target must initially have been alive
+                if m != MexicanMoves.WAIT:
+                    target = kill_method(i, m, length)
+                    if init_state.state[target] == 0:
+                        return False
+                    else:  # kill target (the name's band, jahn band)
+                        state.state[target] = 0
+
+    if alive_players == 2:
+        # only other or wait is allowed for non 3-player games
+        for m in move:
+            if m != 0 or m != 2:
+                return False
+
+    if alive_players == 1:
+        # if only one player, they can only wait
+        for m in move:
+            if m != 0:
+                return False
+
+    if DEBUG:
+        print(f"resulting state: {state.state}")
+    return state
+
+    """
+    for each part of move
+        check if legal,
+        then execute
+        
+        a player can shoot a dead player only if that player was a live to begin with
+        
+    check if in 3 player mode or 2 player mode (or 1 player mode)
+    
+    use kill_method to get player who dies
+    """
+
+
+def generate_mexican(cgs: CGS):
+    queue = python_queue.Queue()
+    # [queue.put(state) for state in all_states()]
+    queue.put(7)  # initialise with state q111 = 7
+    visited = set()
+    while not queue.empty():
+        print("\n==== NEW ITER ====")
+        # pop a state off the queue to explore
+        q = queue.get()
+        for move in all_moves():
+            # ignore moves which are not valid
+            if DEBUG:
+                print(f"q: {q}, move: {[m.value for m in move]}")
+            result_state = move_valid(q, move)
+            if not result_state:
                 if DEBUG:
-                    print(f"({i:2}) moves: {p1_move.value:2}, {p2_move.value:2}, {p3_move.value:2}, state: {state}")
+                    print("Move invalid")
+                continue
 
-                out += [[p1_move.value, p2_move.value, p3_move.value, state]]
-                print()
-                entry = {p1_move.value: {p2_move.value: {p3_move.value: {''.join(map(str, state))}}}}
-                cgs.game_struct['transitions'][7] = update(cgs.game_struct['transitions'][7], entry)
+            # convert resulting state to base10
+            target_state = get_base10_rep_from_binary_array(result_state.state)
 
-    return out
+            # add valid transaction to cgs transitions
+            cgs.add_trans(q, move, target_state)
+
+            # add any state targets found to queue
+            if target_state not in visited:
+                queue.put(target_state)  # move_target(q, move)
+
+            # add current state to visited
+            visited.add(target_state)
 
 
 if __name__ == '__main__':
-    test = [{0: [1, 2, 3],
-             1: [4, 5, 6],
-             2: [7, 8, 9]}]
-
+    # transitions[state][player1choice][player2choice][player3choice] -> new_state
     cgs = CGS(player_count=3)
-    gen = generate_mexican(cgs)
-    pprint(gen)
 
+    gen = generate_mexican(cgs)
     pprint(cgs.game_struct)
+
     write_cgs("test.json", cgs.game_struct)
