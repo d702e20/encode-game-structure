@@ -6,7 +6,7 @@ from pprint import pprint
 import collections.abc
 from typing import Union
 
-DEBUG = True
+DEBUG = False
 
 
 def write_cgs(file, cgs):
@@ -20,7 +20,7 @@ def write_cgs(file, cgs):
 
 
 class CGS:
-    def __init__(self, formula={}, player_count=0, labeling={}, transitions={}, moves={}):
+    def __init__(self, formula={}, player_count=0, labeling=[], transitions={}, moves={}):
         self.formula = formula
         self.game_struct = {"player_count": player_count,
                             "labeling": labeling,
@@ -28,13 +28,24 @@ class CGS:
                             "moves": moves}
 
     def add_trans(self, q, move, result_state):
-        entry = {move[0]: {move[1]: {move[2]: {result_state}}}}  # resulting state as list?
+        # shifting up by once so moves are in range {0, 1, 2} and mapping 'other' to 'right' (convert to list for edit)
+        move = list(move)
+
+        for i, m in enumerate(move):
+            if m == 2:
+                # ugly fix
+                move[i] = MexicanMoves.RIGHT
+
+        entry = {move[0] + 1: {move[1] + 1: {move[2] + 1: {result_state}}}}
         try:
             self.game_struct['transitions'][q]
         except KeyError:  # maybe q doesn't exist
             self.game_struct['transitions'].update({q: {}})
         finally:
             self.game_struct['transitions'][q] = update(self.game_struct['transitions'][q], entry)
+
+    def append_label(self, labels):
+        self.game_struct['labeling'].append(labels)
 
 
 class MexicanMoves(IntEnum):
@@ -178,18 +189,6 @@ def move_valid(q, move):
         print(f"resulting state: {state.state}")
     return state
 
-    """
-    for each part of move
-        check if legal,
-        then execute
-        
-        a player can shoot a dead player only if that player was a live to begin with
-        
-    check if in 3 player mode or 2 player mode (or 1 player mode)
-    
-    use kill_method to get player who dies
-    """
-
 
 def generate_mexican(cgs: CGS):
     queue = python_queue.Queue()
@@ -197,7 +196,8 @@ def generate_mexican(cgs: CGS):
     queue.put(7)  # initialise with state q111 = 7
     visited = set()
     while not queue.empty():
-        print("\n==== NEW ITER ====")
+        if DEBUG:
+            print("\n==== NEW ITER ====")
         # pop a state off the queue to explore
         q = queue.get()
         for move in all_moves():
@@ -224,11 +224,30 @@ def generate_mexican(cgs: CGS):
             visited.add(target_state)
 
 
+def generate_labeling(cgs: CGS):
+    for n in [0, 1, 2, 4, 3, 6, 7]:
+        state = State(n)
+        res = []
+        for i, alive in enumerate(state.state):
+            if alive:
+                res.append(f"alive{i + 1}")
+        cgs.append_label(res)
+
+
+# [[[print(f"{x},{y},{z}") for z in {True, False}] for y in {True, False}] for x in {True, False}]
+
+
 if __name__ == '__main__':
     # transitions[state][player1choice][player2choice][player3choice] -> new_state
     cgs = CGS(player_count=3)
 
-    generate_mexican(cgs)
-    pprint(cgs.game_struct)
+    # generate \pi
+    generate_labeling(cgs)
 
+    # generate transition function
+    generate_mexican(cgs)
+
+    # generate moves per state
+
+    pprint(cgs.game_struct)
     write_cgs("test.json", cgs.game_struct)
