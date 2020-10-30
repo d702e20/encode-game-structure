@@ -20,8 +20,7 @@ def write_cgs(file, cgs):
 
 
 class CGS:
-    def __init__(self, formula={}, player_count=0, labeling=[], transitions={}, moves={}):
-        self.formula = formula
+    def __init__(self, player_count=0, labeling=[], transitions={}, moves=[]):
         self.game_struct = {"player_count": player_count,
                             "labeling": labeling,
                             "transitions": transitions,
@@ -33,7 +32,6 @@ class CGS:
 
         for i, m in enumerate(move):
             if m == 2:
-                # ugly fix
                 move[i] = MexicanMoves.RIGHT
 
         entry = {move[0] + 1: {move[1] + 1: {move[2] + 1: {result_state}}}}
@@ -47,28 +45,8 @@ class CGS:
     def append_label(self, labels):
         self.game_struct['labeling'].append(labels)
 
-
-class MexicanMoves(IntEnum):
-    WAIT = 0
-    LEFT = -1
-    RIGHT = 1
-    OTHER = 2  # think bout this
-
-
-def kill_method(source, value, length):
-    return (source + value) % length
-
-
-def update(d, u):
-    """
-    https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
-    """
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
+    def append_move(self, moves):
+        self.game_struct['moves'].append(moves)
 
 
 class State:
@@ -93,17 +71,27 @@ class State:
         return get_base10_rep(self.__str__())
 
 
-def all_moves():
-    ret = set()
-    [[[ret.add((p1_move, p2_move, p3_move))
-       for p1_move in MexicanMoves]
-      for p2_move in MexicanMoves]
-     for p3_move in MexicanMoves]
-    return sorted(ret)
+class MexicanMoves(IntEnum):
+    WAIT = 0
+    LEFT = -1
+    RIGHT = 1
+    OTHER = 2
 
 
-def all_states():
-    return [state for state in range(0, 8)]
+def update(d, u):
+    """
+    https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
+    """
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
+
+def kill_method(source, value, length):
+    return (source + value) % length
 
 
 def get_binary_rep(val: int) -> str:
@@ -118,15 +106,27 @@ def get_base10_rep_from_binary_array(val: [int]):
     return get_base10_rep(str(''.join(map(str, val))))
 
 
+def all_moves():
+    ret = set()
+    [[[ret.add((p1_move, p2_move, p3_move))
+       for p1_move in MexicanMoves]
+      for p2_move in MexicanMoves]
+     for p3_move in MexicanMoves]
+    return sorted(ret)
+
+
+def all_states():
+    return [state for state in range(0, 8)]
+
+
 def move_valid(q, move):
     init_state = State(q)
     state = copy.deepcopy(init_state)
     length = 3
     assert init_state == state
 
-    # three player
     if DEBUG:
-        print("Move valid:")
+        print("Move valid computation:")
 
     # count alive players
     alive_players = init_state.state.count(1)
@@ -152,7 +152,7 @@ def move_valid(q, move):
                     target = kill_method(i, m, length)
                     if init_state.state[target] == 0:
                         return False
-                    else:  # kill target (the name's band, jahn band)
+                    else:  # kill target (oi mate, u got a loicense t' kill?)
                         state.state[target] = 0
 
     if alive_players == 2:
@@ -172,12 +172,12 @@ def move_valid(q, move):
             # player i chose to kill other
             if m == 2:
                 # find index of other player, this works because only two are present and we start searching after p_i
-                for j in range(1, 3):  # TODO
+                for j in range(1, 3):
                     if init_state.state[(i + j) % length] != 1:
                         continue
                     # kill other player
                     state.state[j] = 0
-                    break  # good measure
+                    break  # for good measure
 
     if alive_players == 1 or alive_players == 0:
         # if only one player, they can only wait
@@ -192,12 +192,11 @@ def move_valid(q, move):
 
 def generate_mexican(cgs: CGS):
     queue = python_queue.Queue()
-    # [queue.put(state) for state in all_states()]
     queue.put(7)  # initialise with state q111 = 7
     visited = set()
     while not queue.empty():
         if DEBUG:
-            print("\n==== NEW ITER ====")
+            print("\n==== NEW ITERATION ====")
         # pop a state off the queue to explore
         q = queue.get()
         for move in all_moves():
@@ -218,14 +217,14 @@ def generate_mexican(cgs: CGS):
 
             # add any state targets found to queue
             if target_state not in visited:
-                queue.put(target_state)  # move_target(q, move)
+                queue.put(target_state)
 
             # add current state to visited
             visited.add(target_state)
 
 
 def generate_labeling(cgs: CGS):
-    for n in [0, 1, 2, 4, 3, 6, 7]:
+    for n in all_states():
         state = State(n)
         res = []
         for i, alive in enumerate(state.state):
@@ -234,20 +233,27 @@ def generate_labeling(cgs: CGS):
         cgs.append_label(res)
 
 
-# [[[print(f"{x},{y},{z}") for z in {True, False}] for y in {True, False}] for x in {True, False}]
+def generate_num_moves(cgs: CGS):
+    for n in all_states():
+        state = State(n)
+        alive_players = state.state.count(1)
+        res = []
+        for i, alive in enumerate(state.state):
+            res.append(alive_players if alive else 1)
+        cgs.append_move(res)
 
 
 if __name__ == '__main__':
-    # transitions[state][player1choice][player2choice][player3choice] -> new_state
     cgs = CGS(player_count=3)
 
     # generate \pi
-    generate_labeling(cgs)
+    generate_labeling(cgs)  # fixme: dict with state instead of inferring state based on array position?
 
     # generate transition function
     generate_mexican(cgs)
 
-    # generate moves per state
+    # generate number of moves per state
+    generate_num_moves(cgs)  # fixme: dict with state instead of inferring state based on array position?
 
     pprint(cgs.game_struct)
-    write_cgs("test.json", cgs.game_struct)
+    write_cgs("mexican-standoff.json", cgs.game_struct)
