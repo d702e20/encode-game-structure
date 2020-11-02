@@ -30,9 +30,16 @@ class CGS:
         # shifting up by once so moves are in range {0, 1, 2} and mapping 'other' to 'right' (convert to list for edit)
         move = list(move)
 
+        # not very pretty, but works for mapping [-1 .. 2] to [0 .. n)
         for i, m in enumerate(move):
+            if m == -1:
+                move[i] = 0
+            if m == 0:
+                move[i] = -1
+            if m == 1:  # for completeness
+                move[i] = 1
             if m == 2:
-                move[i] = MexicanMoves.RIGHT
+                move[i] = 0
 
         entry = {move[0] + 1: {move[1] + 1: {move[2] + 1: {result_state}}}}
         try:
@@ -171,13 +178,13 @@ def move_valid(q, move):
 
             # player i chose to kill other
             if m == 2:
-                # find index of other player, this works because only two are present and we start searching after p_i
-                for j in range(1, 3):
-                    if init_state.state[(i + j) % length] != 1:
+                # find index of other player
+                for j in range(0, 3):
+                    if init_state.state[(i + j) % length] != 1 or j == i:
                         continue
+                    assert j != i  # no suicide please
                     # kill other player
                     state.state[j] = 0
-                    break  # for good measure
 
     if alive_players == 1 or alive_players == 0:
         # if only one player, they can only wait
@@ -229,7 +236,7 @@ def generate_labeling(cgs: CGS):
         res = []
         for i, alive in enumerate(state.state):
             if alive:
-                res.append(f"alive{i + 1}")
+                res.append(i + 1)
         cgs.append_label(res)
 
 
