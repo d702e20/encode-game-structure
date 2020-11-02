@@ -75,7 +75,7 @@ class State:
         return str(self.state)
 
     def base10_rep(self):
-        return get_base10_rep(self.__str__())
+        return get_base10_rep_from_binary_array(self.state)
 
 
 class MexicanMoves(IntEnum):
@@ -180,11 +180,13 @@ def move_valid(q, move):
             if m == 2:
                 # find index of other player
                 for j in range(0, 3):
-                    if init_state.state[(i + j) % length] != 1 or j == i:
+                    index = kill_method(i, j, length)
+                    if init_state.state[index] != 1 or index == i:
                         continue
-                    assert j != i  # no suicide please
+                    assert index != i  # no suicide please
+                    assert state.state[index] == 1  # cannot kill dead people
                     # kill other player
-                    state.state[j] = 0
+                    state.state[index] = 0
 
     if alive_players == 1 or alive_players == 0:
         # if only one player, they can only wait
