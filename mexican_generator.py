@@ -7,7 +7,7 @@ import collections.abc
 from typing import Union
 
 DEBUG = False
-USE_LISTS = False  # if false, uses dicts
+USE_LISTS = True  # if false, uses dicts
 
 
 def write_cgs(file, cgs):
@@ -266,6 +266,10 @@ if __name__ == '__main__':
 
     # generate transition function
     generate_mexican(cgs)
+
+    # hotfix for fixing duplicates for list output
+    if USE_LISTS:
+        cgs.game_struct['transitions'][7] = cgs.game_struct['transitions'][7][:27]
 
     # generate number of moves per state
     generate_num_moves(cgs)  # fixme: dict with state instead of inferring state based on array position?
