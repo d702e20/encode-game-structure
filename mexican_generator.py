@@ -7,6 +7,7 @@ import collections.abc
 from typing import Union
 
 DEBUG = False
+USE_LISTS = False  # if false, uses dicts
 
 
 def write_cgs(file, cgs):
@@ -20,11 +21,11 @@ def write_cgs(file, cgs):
 
 
 class CGS:
-    def __init__(self, player_count=0, labeling=[], transitions={}, moves=[]):
+    def __init__(self, player_count=0):
         self.game_struct = {"player_count": player_count,
-                            "labeling": labeling,
-                            "transitions": transitions,
-                            "moves": moves}
+                            "labeling": [],
+                            "transitions": [[] for _ in all_states()] if USE_LISTS else {},
+                            "moves": []}
 
     def add_trans(self, q, move, result_state):
         # shifting up by once so moves are in range {0, 1, 2} and mapping 'other' to 'right' (convert to list for edit)
@@ -41,13 +42,18 @@ class CGS:
             if m == 2:
                 move[i] = 0
 
-        entry = {move[0] + 1: {move[1] + 1: {move[2] + 1: {result_state}}}}
-        try:
-            self.game_struct['transitions'][q]
-        except KeyError:  # maybe q doesn't exist
-            self.game_struct['transitions'].update({q: {}})
-        finally:
-            self.game_struct['transitions'][q] = update(self.game_struct['transitions'][q], entry)
+        if USE_LISTS:
+            entry = [move[0] + 1, [move[1] + 1, [move[2] + 1, [result_state]]]]
+            self.game_struct['transitions'][q].append(entry)
+        else:
+            entry = {move[0] + 1: {move[1] + 1: {move[2] + 1: {result_state}}}}
+
+            try:
+                self.game_struct['transitions'][q]
+            except KeyError:  # maybe q doesn't exist
+                self.game_struct['transitions'].update({q: {}})
+            finally:
+                self.game_struct['transitions'][q] = update(self.game_struct['transitions'][q], entry)
 
     def append_label(self, labels):
         self.game_struct['labeling'].append(labels)
@@ -265,4 +271,4 @@ if __name__ == '__main__':
     generate_num_moves(cgs)  # fixme: dict with state instead of inferring state based on array position?
 
     pprint(cgs.game_struct)
-    write_cgs("mexican-standoff.json", cgs.game_struct)
+    write_cgs(f"mexican-standoff-{'list' if USE_LISTS else 'dict'}.json", cgs.game_struct)
