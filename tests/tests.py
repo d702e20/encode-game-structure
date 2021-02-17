@@ -1,6 +1,6 @@
 import unittest
 
-from mexican_generator import *
+from generators.MexicanGenerators import *
 
 
 class KillTests(unittest.TestCase):

@@ -1,87 +1,23 @@
-import json
 import queue as python_queue
 import copy
 from enum import IntEnum
 from pprint import pprint
-import collections.abc
-from typing import Union
+
+from domain.CGS import CGS
+from domain.CGSGenerator import CGSGenerator
+from domain.State import State
+from utils.conversions import get_base10_rep_from_binary_array
+from utils.io import write_cgs
 
 DEBUG = False
 USE_LISTS = True  # if false, uses dicts
 
 
-def write_cgs(file, cgs):
-    def set_default(obj):
-        if isinstance(obj, set):
-            return list(obj)
-        raise TypeError
+class MexicanGenerator(CGSGenerator):
 
-    with open(file, 'w+') as o:
-        o.writelines(json.dumps(cgs, default=set_default))
+    def __init__(self):
+        CGSGenerator.__init__(self)
 
-
-class CGS:
-    def __init__(self, player_count=0):
-        self.game_struct = {"player_count": player_count,
-                            "labeling": [],
-                            "transitions": [[] for _ in all_states()] if USE_LISTS else {},
-                            "moves": []}
-
-    def add_trans(self, q, move, result_state):
-        # shifting up by once so moves are in range {0, 1, 2} and mapping 'other' to 'right' (convert to list for edit)
-        move = list(move)
-
-        # not very pretty, but works for mapping [-1 .. 2] to [0 .. n)
-        for i, m in enumerate(move):
-            if m == -1:
-                move[i] = 0
-            if m == 0:
-                move[i] = -1
-            if m == 1:  # for completeness
-                move[i] = 1
-            if m == 2:
-                move[i] = 0
-
-        if USE_LISTS:
-            entry = [move[0] + 1, [move[1] + 1, [move[2] + 1, [result_state]]]]
-            self.game_struct['transitions'][q].append(entry)
-        else:
-            entry = {move[0] + 1: {move[1] + 1: {move[2] + 1: {result_state}}}}
-
-            try:
-                self.game_struct['transitions'][q]
-            except KeyError:  # maybe q doesn't exist
-                self.game_struct['transitions'].update({q: {}})
-            finally:
-                self.game_struct['transitions'][q] = update(self.game_struct['transitions'][q], entry)
-
-    def append_label(self, labels):
-        self.game_struct['labeling'].append(labels)
-
-    def append_move(self, moves):
-        self.game_struct['moves'].append(moves)
-
-
-class State:
-    def __init__(self, state_int):
-        # Unroll base 10 rep to binary rep with leading zeroes
-        bin_rep = list(map(int, get_binary_rep(state_int)))
-        if len(bin_rep) == 1:
-            bin_rep = [0] + bin_rep
-
-        if len(bin_rep) == 2:
-            bin_rep = [0] + bin_rep
-
-        self.state = bin_rep
-
-    def __eq__(self, other):
-        return self.state == other.state
-
-    def __str__(self):
-        return str(self.state)
-
-    def base10_rep(self):
-        return get_base10_rep_from_binary_array(self.state)
 
 
 class MexicanMoves(IntEnum):
@@ -91,32 +27,8 @@ class MexicanMoves(IntEnum):
     OTHER = 2
 
 
-def update(d, u):
-    """
-    https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
-    """
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
-
-
 def kill_method(source, value, length):
     return (source + value) % length
-
-
-def get_binary_rep(val: int) -> str:
-    return format(val, 'b')
-
-
-def get_base10_rep(val: Union[int, str]) -> int:
-    return int(str(val), 2)
-
-
-def get_base10_rep_from_binary_array(val: [int]):
-    return get_base10_rep(str(''.join(map(str, val))))
 
 
 def all_moves():
@@ -248,14 +160,6 @@ def generate_labeling(cgs: CGS):
         cgs.append_label(res)
 
 
-def generate_num_moves(cgs: CGS):
-    for n in all_states():
-        state = State(n)
-        alive_players = state.state.count(1)
-        res = []
-        for i, alive in enumerate(state.state):
-            res.append(alive_players if alive else 1)
-        cgs.append_move(res)
 
 
 if __name__ == '__main__':
