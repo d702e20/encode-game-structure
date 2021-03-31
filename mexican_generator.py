@@ -16,7 +16,7 @@ def write_cgs(file, cgs):
             return list(obj)
         raise TypeError
 
-    with open(file, 'w+') as o:
+    with open(f'output/{file}', 'w+') as o:
         o.writelines(json.dumps(cgs, default=set_default))
 
 
