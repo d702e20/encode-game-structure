@@ -24,11 +24,11 @@ class DepthSize(ArgsParseEnum):
 
 
 class BranchingFactor(ArgsParseEnum):
-    VERY_SMALL = (2, 4)
-    SMALL = (4, 6)
-    MEDIUM = (6, 8)
-    LARGE = (8, 10)
-    VERY_LARGE = (10, 12)
+    VERY_SMALL = (1, 3)
+    SMALL = (2, 4)
+    MEDIUM = (3, 5)
+    LARGE = (4, 6)
+    VERY_LARGE = (5, 7)
 
 
 class SelectableEnumAction(Action):
