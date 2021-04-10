@@ -4,6 +4,7 @@ from utils.atl_functions import early_termination, whole_state_space
 from utils.transitions import transition_generator
 from utils.configuration import get_config
 from utils.utility_functions import write_json
+from utils.progress_bar import progress_bar
 
 config = get_config(pathlib.Path(__file__).parent)
 
@@ -19,15 +20,18 @@ predecessors_list: dict = {}
 
 vv = set()
 config.logger.info(config.__str__())
-whoop = config.depth_size
+count_up = 0
+count_down = config.depth_size
 while True:
     try:
-        whoop -= 1
+        count_up += 1
+        count_down -= 1
+        progress_bar(count_up, config.depth_size)
         transition = next(transitions)
         result['labeling'].append(transition[0])
         result['transitions'].append(transition[1])
         result['moves'].append(transition[2])
-        config.logger.info(f'Countdown: {whoop}')
+        config.logger.info(f'Countdown: {count_down}')
         for key, value in transition[3].items():
             if predecessors_list.get(key) is None:
                 predecessors_list[key] = value

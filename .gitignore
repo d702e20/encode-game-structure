@@ -109,6 +109,7 @@ MANIFEST
 *.spec
 
 # Installer logs
+/random_generator/log.txt
 pip-log.txt
 pip-delete-this-directory.txt
 

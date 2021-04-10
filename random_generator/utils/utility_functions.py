@@ -5,8 +5,7 @@ from typing import Callable
 
 
 def write_json(file: Path, json_obj):
-    if not file.parent.is_dir():
-        file.parent.mkdir(parents=True)
+    file.parent.mkdir(parents=True, exist_ok=True)
     with open(file, 'w') as o:
         o.write(json.dumps(json_obj))
 

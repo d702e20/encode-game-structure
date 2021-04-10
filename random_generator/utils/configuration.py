@@ -24,6 +24,7 @@ class Config:
 
     def __init__(self, initial_config: dict):
         if initial_config['config'] is not None:
+            self.__set_config(initial_config)
             self.__read_config(initial_config['config'])
         else:
             self.__set_config(initial_config)
@@ -51,7 +52,8 @@ class Config:
     def __read_config(self, config_location: str):
         with open(config_location, 'r+') as f:
             obj = json.load(f)
-            self.__set_config(obj)
+            obj['very_random_generator'] = False
+            self.seed = obj['seed']
             self.number_of_players = obj['number_of_players']
             self.max_num_moves = obj['max_num_moves']
             self.depth_size = obj['depth_size']
@@ -59,8 +61,6 @@ class Config:
     def __dict__(self):
         return {
             'seed': self.seed,
-            'depth': self.depth,
-            'branching': self.branching,
             'number_of_players': self.number_of_players,
             'max_num_moves': self.max_num_moves,
             'depth_size': self.depth_size
@@ -70,9 +70,9 @@ class Config:
         return "(" + "".join(["{'" + str(key) + "': '" + str(value) + "'}, {" for key, value in self.__dict__().items()]) + ")"
 
     def write_config(self):
-        self.output.parent.mkdir(parents=True)
-        with open(self.output, 'w+') as f:
-            f.write(json.dumps(self.__dict__))
+        self.output.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.config_out, 'w+') as f:
+            f.write(json.dumps(self.__dict__()))
         return self
 
 
@@ -101,12 +101,15 @@ def get_config(root_dir: Path):
     cc = args.parse_args().__dict__
     cc['root'] = root_dir
     cc['name'] = cc['output'].name.split('.')[0]
+
     logging.basicConfig(
         level=cc['verbose'],
+        filename=root_dir.joinpath('log.txt').__str__()
     )
+
     logger = logging.getLogger('random-generator')
 
     cc['logger'] = logging.getLogger('random-generator')
     cc['logger']: logging.Logger
 
-    return Config(cc)
+    return Config(cc).write_config()
