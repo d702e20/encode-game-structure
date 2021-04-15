@@ -9,6 +9,10 @@ from . import SelectableEnumAction, DepthSize, BranchingFactor, VerbosityOptions
 
 
 class Config:
+    """
+        The configuration class holds all relevant configurations for the generation af the CGS.
+        It can load / write itself to a json file which is located pr default in ../config/config.json
+    """
     seed: any = ''
     output: Path
     amount_of_atl_formulas = 3
@@ -77,6 +81,9 @@ class Config:
 
 
 def get_config(root_dir: Path):
+    """
+        Uses argparse to create the necessary arguments to run the CGS generator
+    """
     args = argparse.ArgumentParser()
     default_config_place = root_dir.joinpath('config').joinpath('config.json')
     args.add_argument('-c', '--config', default=None, help='config figuration in json format')

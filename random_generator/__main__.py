@@ -1,3 +1,16 @@
+"""
+When running python on a dir, it looks for a file called
+__main__.py, which will act as if we ran the file here.
+
+So assume that this whole text file was a function called main() and called with
+if __name__ == '__main__':
+    // run this
+
+
+
+
+"""
+
 import pathlib
 
 from utils.atl_functions import early_termination, whole_state_space
@@ -23,6 +36,11 @@ config.logger.info(config.__str__())
 count_up = 0
 count_down = config.depth_size
 while True:
+    """
+        This while True loop makes sure that we get all of the transitions from the transition generator.
+        When no more transitions are left, the buildin call "next" will throw a StopIteration exception.
+        This is catched, and we append a few labels to make atl_generation easier. (on the last state, and on the first)
+    """
     try:
         count_up += 1
         count_down -= 1

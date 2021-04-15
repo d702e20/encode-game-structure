@@ -3,6 +3,8 @@ from logging import CRITICAL, FATAL, ERROR, WARNING, WARN, INFO, DEBUG
 
 
 class VerbosityOptions(IntEnum):
+    """Verbosity options for logger in the configuration."""
+
     CRITICAL = CRITICAL
     FATAL = FATAL
     ERROR = ERROR

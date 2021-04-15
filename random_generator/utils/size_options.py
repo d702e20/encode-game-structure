@@ -32,6 +32,10 @@ class BranchingFactor(ArgsParseEnum):
 
 
 class SelectableEnumAction(Action):
+    """
+        As argparse does not have a smooth way of handling enums as options.
+        This action replaces the default way of handling enum options, in a more pretty and user friendly way.
+    """
     def __init__(self, *args, **kwargs):
         choices: [ArgsParseEnum] = kwargs.pop('choices', None)
         choices: list[ArgsParseEnum]

@@ -2,7 +2,7 @@ import queue as python_queue
 import random
 
 from utils.configuration import Config
-from utils.utility_functions import get_move_vector, get_x_final_transitions, mul
+from utils.utility_functions import get_move_vector, get_resulting_states, mul
 
 
 def transition_generator(config: Config):
@@ -18,7 +18,7 @@ def transition_generator(config: Config):
             random.randint(1, config.max_num_moves)
             for _ in range(config.number_of_players)
         ]
-        final_transitions = get_x_final_transitions(random, depth, mul(this_state_moves))
+        final_transitions = get_resulting_states(random, depth, mul(this_state_moves))
         for x in final_transitions:
             if transitions_to.get(q) is None:
                 transitions_to[q] = []
