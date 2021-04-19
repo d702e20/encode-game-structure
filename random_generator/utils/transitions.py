@@ -19,8 +19,9 @@ def transition_generator(config: Config):
             for _ in range(config.number_of_players)
         ]
         final_transitions = []
-        for x in range(mul(this_state_moves)):
-            final_transitions.append(get_resulting_states(random, depth))
+        for _ in range(mul(this_state_moves)):
+            x = get_resulting_states(random, depth)
+            final_transitions.append(x)
             if transitions_to.get(q) is None:
                 transitions_to[q] = []
             transitions_to[q].append(x)
