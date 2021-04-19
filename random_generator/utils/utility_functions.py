@@ -33,13 +33,13 @@ def mul(iterable: list[int]) -> int:
     return reduce(lambda x, y: operator.mul(x, y), iterable)
 
 
-def get_resulting_states(random, max_trans: int, total_moves: int) -> list[int]:
+def get_resulting_states(random, max_trans: int) -> int:
     """
         For the total amount of moves that all players can take in our current state,
         this returns a random integer between 0 and the max amount of states.
         Resulting in a list that can with the chunk command be divided up to generate a move vector
     """
-    return [random.randint(0, max_trans - 1) for _ in range(total_moves)]
+    return random.randint(0, max_trans - 1)
 
 
 def chunks(li, n):
