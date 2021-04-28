@@ -106,6 +106,11 @@ def get_config(root_dir: Path):
                                help='Default: None.')
 
     cc = args.parse_args().__dict__
+
+    cc['output'] = Path(cc['output'])
+    
+    cc['config_out'] = Path(cc['config_out'])
+
     cc['root'] = root_dir
     cc['name'] = cc['output'].name.split('.')[0]
 
