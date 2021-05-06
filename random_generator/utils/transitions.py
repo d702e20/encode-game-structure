@@ -6,7 +6,6 @@ from utils.utility_functions import get_move_vector, get_resulting_states, mul
 
 
 def transition_generator(config: Config):
-    visited = set()
     depth = config.depth_size
     for current_index in range(config.depth_size):
         transitions_to: dict = {}

@@ -70,9 +70,9 @@ def early_termination(config: Config,
                                 range(0, config.number_of_players),
                                 k=config.random.randint(0, config.number_of_players))),
                             'formula': {
-                                'proposition': config.random.choice(non_initial_labels)
+                                'proposition': int(config.random.choice(non_initial_labels))
                                 if o == TemporalOperator.invariant
-                                else config.random.choice(initial_available_labels)
+                                else int(config.random.choice(initial_available_labels))v
                             }
                         }
                     }
