@@ -72,7 +72,7 @@ def early_termination(config: Config,
                             'formula': {
                                 'proposition': int(config.random.choice(non_initial_labels))
                                 if o == TemporalOperator.invariant
-                                else int(config.random.choice(initial_available_labels))v
+                                else int(config.random.choice(initial_available_labels))
                             }
                         }
                     }
